@@ -1,0 +1,20 @@
+{
+    "model_1": "conv3x3",
+    "model_2": "conv3x3",
+    "model_3": "conv3x3",
+    "model_4": "conv3x3",
+    "model_5": "avgpool",
+    "model_6": "conv3x3",
+    "model_7": "conv3x3",
+    "model_8": "avgpool",
+    "model_9": "avgpool",
+    "model_10": "conv3x3",
+    "model_11": "conv3x3",
+    "model_12": "conv3x3",
+    "model_13": "conv3x3",
+    "model_14": "conv3x3",
+    "model_15": "conv3x3",
+    "model_16": "biupsample",
+    "model_17": "biupsample",
+    "model_18": "biupsample"
+}
