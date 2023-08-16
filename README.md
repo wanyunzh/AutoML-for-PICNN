@@ -1,48 +1,23 @@
 # AutoML-for-PICNN
 ## 1.Datasets
 
-### 1.1 Description
+The datasets for the Darcy flow and heat equations with different layouts can be downloaded in https://hkustgz-my.sharepoint.com/:f:/g/personal/wzhou266_connect_hkust-gz_edu_cn/EokovhAZ0xRMntQ9JSgQZU4BLSsLPZkWlz18pTs_DdL_Vw?e=zPsB8S.<br />
 
-The datasets for the Darcy flow and heat equations with different layouts can be downloaded in .
 
-### 1.2 Getting PSSM profiles
+## 2. Searching for loss functions
 
-you can get your PSSM files through standalone BLAST program.
+For each dataset, run hpo_algor.py to search for the best loss function.
 
-* **Step** 1. Go to the NCBI website to download the BLAST program
+## 3. Searching for network architectures
 
-  [[https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/](https://hkustgz-my.sharepoint.com/personal/wzhou266_connect_hkust-gz_edu_cn/_layouts/15/onedrive.aspx?ga=1&id=%2Fpersonal%2Fwzhou266%5Fconnect%5Fhkust%2Dgz%5Fedu%5Fcn%2FDocuments%2FPICNN%5Fdataset&view=0)](https://hkustgz-my.sharepoint.com/:f:/g/personal/wzhou266_connect_hkust-gz_edu_cn/EokovhAZ0xRMntQ9JSgQZU4BLSsLPZkWlz18pTs_DdL_Vw?e=zPsB8S). <br />
+### 3.1 Entire-structured search space
 
-  Go to website https://ftp.ncbi.nlm.nih.gov/blast/db/ to download protein sequences.<br />
+1. For each dataset, run search_struct.py to search for the optimal PICNN architecture by using reinforcement learning (multi-trial strategy) and then run retrain.py to get the prediction results. 
+2. For each dataset, run retrain_oneshot.py to get the prediction results  by using one-shot strategies
 
-  Put swissprot.tar.gz to the bin folder (eg. ./blast/bin/).
 
-* **Step 2.** Use command line to enter the /blast/bin/ folder, run the following command to establish a local BLAST database.
 
-```
 
-makeblastdb.exe -in swissprot -dbtype prot -title “swissprot” -out lxsp
-
-```
-
-* **Step 3.** Put a single sequence into the queryseq.fasta file, run the following command to generate a single PSSM such as 1.pssm. and rename them to TXT files such as 1.txt
-```
-psiblast.exe -db lxsp -query 1.txt -evalue 0.001 -num_iterations 3 -out_ascii_pssm 1.pssm
-```
-
-* **Note**. There are some requirments for PSSM files:
-
-  1.the PSSM files can only be named using numbers and it should be TXT files. For example, 1.txt, 2.txt ...
-
-  2.the name of the PSSM files must match the sequence number of your predicting sequences in case some sequences may not have PSSM files.
-
-  3.All PSSM files should be put into a folder.
-
-  (These requirements can be done simply via the aboved mention instruction )
-
-### 1.3 Requirements for prediction
-
-TriNet can be used under Linux or Windows environment.
 
 Python 3.9.7
 
