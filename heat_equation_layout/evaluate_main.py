@@ -21,7 +21,9 @@ args, unknown_args = parser.parse_known_args()
 def unet_struct(model_cls):
     params = {
         'constraint': 2,
-        'loss function': 2,
+        'UNARY_OPS': 0,
+        'WEIGHT_INIT': 0,
+        'WEIGHT_OPS': 0,
         'kernel': 2,
     }
     seed = args.seed
@@ -42,38 +44,89 @@ def unet_struct(model_cls):
     value = 100000
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = ExponentialLR(optimizer, gamma=0.85)
+    filter = Get_loss(params=params, device=device, nx=args.nx, length=args.length,
+                      bcs=args.bc)
     for epoch in range(0, epochs):
         model.train()
         Res = 0
         mae_valid = []
         for iteration, batch in enumerate(training_data_loader):
             input, truth = batch
+            input_tmp = input.cpu().numpy()
+            truth_batch = truth.cpu().numpy()
             input, truth = input.to(device), truth.to(device)
             optimizer.zero_grad()
             output = model(input)
+            if (epoch == 0) and (iteration) == 0:
+                if params['WEIGHT_INIT'] == 1:
+                    init_weight = torch.ones_like(output)
+                else:
+                    init_weight = torch.zeros_like(output)
+                WEIGHT_OPS = {
+                    0: P_OHEM(init_weight),
+                    # 'adaptive': Loss_Adaptive(init_weight),
+                    1: Max(init_weight),
+                    2: One(init_weight),
+                }
+            output_tmp = output.cpu().detach().numpy()
             input = input * args.input_std + args.input_mean
-            filter = Get_loss(params=params, device=device, nx=args.nx, length=args.length,
-                              bcs=args.bc)
-            laplace_frac, loss_b = filter(input, output)
-            loss_fun = P_OHEM(loss_fun=F.l1_loss)
-            loss_laplace = loss_fun(output - laplace_frac, torch.zeros_like(output - laplace_frac))
-            loss = loss_laplace + loss_b
+            # with torch.no_grad():
+            #     continuity, loss_b = filter(input, output)
+
+            if params['kernel'] == 2 or params['kernel'] == 4:
+                with torch.no_grad():
+                    continuity, loss_b = filter(input, output)
+                difference = output - continuity
+            else:
+                continuity, loss_b = filter(input, output)
+                difference = continuity
+
+            if params['constraint'] == 2:
+                loss_b = 0
+
+            # difference = continuity - torch.zeros_like(continuity)
+            post_difference = UNARY_OPS[params['UNARY_OPS']](difference)
+            weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference, epoch)
+            loss_search = torch.mean(torch.abs(post_difference * weight_search))
+            # if params['gradient']==1:
+            #     if epoch>=1:
+            #         drdx, drdy= get_gradient(continuity, device,nx=args.nx, length=args.length)
+            #         post_gradient1 = UNARY_OPS[params['UNARY_OPS']](drdx)
+            #         post_gradient2 = UNARY_OPS[params['UNARY_OPS']](drdy)
+            #         gradient_weight_search1 = WEIGHT_OPS[params['WEIGHT_OPS']](post_gradient1, epoch)
+            #         gradient_weight_search2 = WEIGHT_OPS[params['WEIGHT_OPS']](post_gradient2, epoch)
+            #         gradient_loss_search1 = torch.mean(torch.abs(post_gradient1 * gradient_weight_search1))
+            #         gradient_loss_search2 = torch.mean(torch.abs(post_gradient2 * gradient_weight_search2))
+            #     else:
+            #         gradient_loss_search1 = 0
+            #         gradient_loss_search2 = 0
+            # else:
+            #     gradient_loss_search1 = 0
+            #     gradient_loss_search2 = 0
+            # loss = loss_search + loss_b + 1e-6 * (gradient_loss_search1 + gradient_loss_search2)
+            loss = loss_search + loss_b
             loss.backward()
             optimizer.step()
-            scheduler.step()
             Res = Res + loss.item()
+        scheduler.step()
         model.eval()
         for iteration, batch in enumerate(valid_data_loader):
             (input, truth) = batch
             input, truth = input.to(device), truth.to(device)
             output = model(input)
             output_k = output + 298
-            val_mae = F.l1_loss(output_k, truth).detach().numpy()
+            input = input * args.input_std + args.input_mean
+            laplace_frac, loss_b = filter(input, output)
+            frac, _ = filter(input, output)
+            loss_jacobi = F.l1_loss(
+                output, frac
+            )
+            val_mae = F.l1_loss(output_k, truth).detach().cpu().numpy()
             mae_valid.append(val_mae)
         res = Res / len(training_data_loader)
         mae = float(np.mean(mae_valid))
-        Res_list.append(res)
-        Error.append(mae)
+        Res_list.append(float(res))
+        Error.append(float(mae))
         print('Epoch is ', epoch)
         print("Res Loss is", (Res / len(training_data_loader)))
         print(" mean absolute error is", mae)
