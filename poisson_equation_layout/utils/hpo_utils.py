@@ -47,7 +47,7 @@ class Get_loss(torch.nn.Module):
         self.sobel_h_3x3 = torch.FloatTensor(
             np.array([[-1, -2, -1],
                       [0, 0, 0],
-                      [1, 2, 1]]) / 8.0).unsqueeze(0).unsqueeze(0).to(device)
+                      [1, 2, 1]]) / 8.0).unsqueeze(0).unsqueeze(0)
 
         self.sobel_v_3x3 = self.sobel_h_3x3.transpose(-1, -2)
 
@@ -56,7 +56,7 @@ class Get_loss(torch.nn.Module):
                       [-8, -10, 0, 10, 8],
                       [-10, -20, 0, 20, 10],
                       [-8, -10, 0, 10, 8],
-                      [-5, -4, 0, 4, 5]]) / 240.).unsqueeze(0).unsqueeze(0).to(device)
+                      [-5, -4, 0, 4, 5]]) / 240.).unsqueeze(0).unsqueeze(0)
         self.sobel_h_5x5 = self.sobel_v_5x5.transpose(-1, -2)
 
     def laplace_fraction(self, x):
@@ -66,31 +66,27 @@ class Get_loss(torch.nn.Module):
             return F.conv2d(x, self.weight_nine.to(device=x.device), bias=None, stride=1, padding=0)
 
     def grad_h(self, image):
-
         filter_size = self.filter_size
-
         if filter_size == 3:
             replicate_pad = 1
-            kernel = self.sobel_v_3x3
+            kernel = self.sobel_v_3x3.to(image.device)  # 使用 .detach()
         elif filter_size == 5:
             replicate_pad = 2
-            kernel = self.sobel_v_5x5
+            kernel = self.sobel_v_5x5.to(image.device)  # 使用 .detach()
         image = F.pad(image, _quadruple(replicate_pad), mode='reflect')
-        grad = F.conv2d(image, kernel, stride=1, padding=0, bias=None) /self.stride
+        grad = F.conv2d(image, kernel, stride=1, padding=0, bias=None) / self.stride
         return grad
 
     def grad_v(self, image):
         filter_size = self.filter_size
-        image_height = image.shape[-2]
         if filter_size == 3:
             replicate_pad = 1
-            kernel = self.sobel_h_3x3
+            kernel = self.sobel_h_3x3.to(image.device)  # 使用 .detach()
         elif filter_size == 5:
             replicate_pad = 2
-            kernel = self.sobel_h_5x5
+            kernel = self.sobel_h_5x5.to(image.device)  # 使用 .detach()
         image = F.pad(image, _quadruple(replicate_pad), mode='reflect')
-        grad = F.conv2d(image, kernel, stride=1, padding=0,
-                        bias=None) /self.stride
+        grad = F.conv2d(image, kernel, stride=1, padding=0, bias=None) / self.stride
         return grad
 
     def forward(self, input, output):
@@ -105,7 +101,7 @@ class Get_loss(torch.nn.Module):
         idx_end = round(self.bcs[1][0] * self.nx / self.length)
         G[..., idx_start:idx_end, :1] = torch.zeros_like(G[..., idx_start:idx_end, :1])
         output_b=output[..., idx_start:idx_end, :1]
-        loss_b=0.001*torch.mean(torch.abs(output_b-torch.zeros_like(output_b)))
+        loss_b=torch.mean(torch.abs(output_b-torch.zeros_like(output_b)))
         if self.filter_size==2 or self.filter_size==4:
             if self.constraint == 1 or self.constraint == 2:
                 x = F.pad(output * G, [1, 1, 1, 1], mode='reflect')# *G to ensure the Dir boundary(绝热部分温度相对为0度)，reflect means Neumann boundary padding and Dirichlet for 边缘点
@@ -126,6 +122,21 @@ class Get_loss(torch.nn.Module):
             return G*(input_pred + input),loss_b
 
 
+# def get_gradient(continuity, device,nx,length):
+#     replicate_pad = 1
+#     kernel_h = torch.FloatTensor(
+#             np.array([[-1, -2, -1],
+#                       [0, 0, 0],
+#                       [1, 2, 1]]) / 8.0).unsqueeze(0).unsqueeze(0).to(device)
+#
+#     image = F.pad(continuity, _quadruple(replicate_pad), mode='reflect')
+#     stride = length / (nx - 1)
+#     grad_h = F.conv2d(image, kernel_h, stride=1, padding=0, bias=None) / stride
+#     kernel_v = kernel_h.transpose(-1, -2)
+#     grad_v = F.conv2d(image, kernel_v, stride=1, padding=0,
+#                     bias=None) / stride
+#
+#     return grad_h, grad_v
 
 
 

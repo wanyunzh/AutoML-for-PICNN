@@ -33,6 +33,7 @@ def get_data(file_type,args,batch_size):
     ])
 
     for i in range(len(path_list)):
+    # for i in range(30):
         path=path_list[i]
         mats = sio.loadmat(path)
         x_data = mats.get('F').astype(np.float32)
