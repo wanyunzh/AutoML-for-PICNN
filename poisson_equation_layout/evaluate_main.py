@@ -4,6 +4,7 @@ import nni
 import random
 from torch.optim.lr_scheduler import ExponentialLR
 from utils.hpo_utils import *
+from loss_operation import *
 
 parser = argparse.ArgumentParser(description='This is hyperparameter for this PDE dataset')
 parser.add_argument("--input_mean", default=0, type=float)
