@@ -241,14 +241,14 @@ if __name__ == "__main__":
     exp_config.max_trial_number = 80
     # exp_config.trial_gpu_number = 1
     # exp_config.training_service.use_active_gpu = False
-    exp.run(exp_config, 8000)
+    exp.run(exp_config, 8065)
     for model_dict in exp.export_top_models(top_k =1,formatter='dict'):
         print(model_dict)
     from nni.retiarii import fixed_arch
     exported_arch_best = exp.export_top_models(top_k =1,formatter='dict')[0]
     import json
-    json.dump(exported_arch_best, open('darcy_struct.json', 'w'))
-    with fixed_arch('darcy_struct.json'):
+    json.dump(exported_arch_best, open('darcy_struct2.json', 'w'))
+    with fixed_arch('darcy_struct2.json'):
         final_model = UNet(in_channels=1, num_classes=3)
         print('final model:',final_model)
 

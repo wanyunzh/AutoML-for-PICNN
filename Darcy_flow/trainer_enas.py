@@ -30,7 +30,7 @@ np.random.seed(seed)  # Numpy module.
 torch.manual_seed(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
-device = torch.device(f"cuda:{2}" if torch.cuda.is_available() else "cpu")
+device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
 batch_size = 32
 lr = 0.001
 training_data_loader, valid_data_loader, test_data_loader = get_dataset(batch_size=batch_size)
