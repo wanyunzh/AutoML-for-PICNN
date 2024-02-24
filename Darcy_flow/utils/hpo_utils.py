@@ -4,29 +4,29 @@ import numpy as np
 import torch.nn.functional as F
 from torch.nn.modules.utils import _quadruple
 
-class P_OHEM(torch.nn.Module):
-    """
-    Weighted Loss
-    """
-    def __init__(self, loss_fun, weight=None):
-        super(P_OHEM, self).__init__()
-        self.weight = weight
-        self.loss_fun = loss_fun
-
-    def forward(self, inputs, targets):
-        diff = self.loss_fun(inputs, targets, reduction='none').detach()
-        min, max = torch.min(diff.view(diff.shape[0], -1), dim=1)[0], torch.max(diff.view(diff.shape[0], -1), dim=1)[0]
-        if inputs.ndim == 4:
-            min, max = min.reshape(diff.shape[0], 1, 1, 1).expand(diff.shape), \
-                       max.reshape(diff.shape[0], 1, 1, 1).expand(diff.shape)
-        elif inputs.ndim == 3:
-            min, max = min.reshape(diff.shape[0], 1, 1).expand(diff.shape), \
-                       max.reshape(diff.shape[0], 1, 1).expand(diff.shape)
-        diff =1.0 * (diff - min) / (max - min)
-        continuity1=diff * (inputs - targets)
-        criterion = nn.MSELoss()
-        out=criterion(continuity1, continuity1 * 0)
-        return out
+# class P_OHEM1(torch.nn.Module):
+#     """
+#     Weighted Loss
+#     """
+#     def __init__(self, loss_fun, weight=None):
+#         super(P_OHEM1, self).__init__()
+#         self.weight = weight
+#         self.loss_fun = loss_fun
+#
+#     def forward(self, inputs, targets):
+#         diff = self.loss_fun(inputs, targets, reduction='none').detach()
+#         min, max = torch.min(diff.view(diff.shape[0], -1), dim=1)[0], torch.max(diff.view(diff.shape[0], -1), dim=1)[0]
+#         if inputs.ndim == 4:
+#             min, max = min.reshape(diff.shape[0], 1, 1, 1).expand(diff.shape), \
+#                        max.reshape(diff.shape[0], 1, 1, 1).expand(diff.shape)
+#         elif inputs.ndim == 3:
+#             min, max = min.reshape(diff.shape[0], 1, 1).expand(diff.shape), \
+#                        max.reshape(diff.shape[0], 1, 1).expand(diff.shape)
+#         diff =1.0 * (diff - min) / (max - min)
+#         continuity1=diff * (inputs - targets)
+#         criterion = nn.MSELoss()
+#         out=criterion(continuity1, continuity1 * 0)
+#         return out
 
 def conv_gpinn(output, sobel_filter):
 
@@ -39,41 +39,8 @@ def conv_gpinn(output, sobel_filter):
 
     return grad_h,grad_v
 
-def flux_diff(input, output, sobel_filter):
 
-    if sobel_filter.filter_size==2 or sobel_filter.filter_size==4:
-        grad_h = sobel_filter.grad_h_2(output[:, [0]])
-        grad_v = sobel_filter.grad_v_2(output[:, [0]])
-    if sobel_filter.filter_size==3 or sobel_filter.filter_size==5:
-        grad_h = sobel_filter.grad_h(output[:, [0]])
-        grad_v = sobel_filter.grad_v(output[:, [0]])
-    flux1 = - input * grad_h
-    flux2 = - input * grad_v
-    out=(output[:, [1]] - flux1) ** 2 + (output[:, [2]] - flux2) ** 2
-    # out = (output[:, [1]] - flux1) + (output[:, [2]] - flux2)
-    return out.mean()
-    # "The PDE residue of the first term of equation,flux1,flux2 can be obtained either" \
-    # "from the gradient of u(first output) or form the output of the model(second and third output)"
-    # return ((output[:, [1]] - flux1) ** 2
-    #     + (output[:, [2]] - flux2) ** 2).mean()
-
-
-def source_diff(output, sobel_filter):
-
-    if sobel_filter.filter_size==2 or sobel_filter.filter_size==4:
-        flux1_g = sobel_filter.grad_h_2(output[:, [1]])
-        flux2_g = sobel_filter.grad_v_2(output[:, [2]])
-    if sobel_filter.filter_size==3 or sobel_filter.filter_size==5:
-        flux1_g = sobel_filter.grad_h(output[:, [1]])
-        flux2_g = sobel_filter.grad_v(output[:, [2]])
-
-    out=(flux1_g + flux2_g) ** 2
-    # out = (flux1_g + flux2_g)
-    return out.mean()
-    
-
-
-def flux_diff_kdim(input, output, sobel_filter):
+def flux_diff_kdim(input, output, sobel_filter,reduction=True):
 
     if sobel_filter.filter_size == 2 or sobel_filter.filter_size == 4:
         grad_h = sobel_filter.grad_h_2(output[:, [0]])
@@ -83,16 +50,24 @@ def flux_diff_kdim(input, output, sobel_filter):
         grad_v = sobel_filter.grad_v(output[:, [0]])
     flux1 = - input * grad_h
     flux2 = - input * grad_v
-    out = (output[:, [1]] - flux1) ** 2 + (output[:, [2]] - flux2) ** 2
-    # out = (output[:, [1]] - flux1) + (output[:, [2]] - flux2)
-    return out
-    # "The PDE residue of the first term of equation,flux1,flux2 can be obtained either" \
-    # "from the gradient of u(first output) or form the output of the model(second and third output)"
-    # return ((output[:, [1]] - flux1) ** 2
-    #     + (output[:, [2]] - flux2) ** 2).mean()
+
+    criterion = nn.MSELoss()
+    # Compute the loss
+    loss1 = criterion(output[:, [1]], flux1)
+    loss2 = criterion(output[:, [2]], flux2)
+    loss = loss1 + loss2
+    if reduction:
+        return loss
+    else:
+        criterion = nn.MSELoss(reduction='none')
+        loss1 = criterion(output[:, [1]], flux1)
+        loss2 = criterion(output[:, [2]], flux2)
+        loss = loss1 + loss2
+        return loss
 
 
-def source_diff_kdim(output, sobel_filter):
+
+def source_diff_kdim(output, sobel_filter,reduction=True):
 
     if sobel_filter.filter_size == 2 or sobel_filter.filter_size == 4:
         flux1_g = sobel_filter.grad_h_2(output[:, [1]])
@@ -101,9 +76,16 @@ def source_diff_kdim(output, sobel_filter):
         flux1_g = sobel_filter.grad_h(output[:, [1]])
         flux2_g = sobel_filter.grad_v(output[:, [2]])
 
-    out = (flux1_g + flux2_g) ** 2
-    # out = (flux1_g + flux2_g)
-    return out
+    criterion = nn.MSELoss()
+    sum_flux = flux1_g + flux2_g
+    target = torch.zeros_like(sum_flux)
+    loss = criterion(sum_flux, target)
+    if reduction:
+        return loss.mean()
+    else:
+        criterion = nn.MSELoss(reduction='none')
+        loss = criterion(sum_flux, target)
+        return loss
     # leave the top and bottom row free, since flux2_g is almost 0,
     # don't want to enforce flux1_g to be also zero.
     # if use_tb:
@@ -213,16 +195,16 @@ class Filter():
 
 
 def loss_origin(input, output, sobel_filter):
-    loss_pde = flux_diff(input, output, sobel_filter) \
-               + source_diff(output, sobel_filter)
+    loss_pde = flux_diff_kdim(input, output, sobel_filter,reduction=True) \
+               + source_diff_kdim(output, sobel_filter,reduction=True)
     return loss_pde
 
 def loss_gpinn(input, output, sobel_filter,epoch):
-    out1 = flux_diff_kdim(input, output, sobel_filter)
-    out2 = source_diff_kdim(output, sobel_filter)
+    out1 = flux_diff_kdim(input, output, sobel_filter,reduction=False)
+    out2 = source_diff_kdim(output, sobel_filter,reduction=False)
     if epoch >= 10:
-        loss_pde0 = flux_diff(input, output, sobel_filter) \
-                    + source_diff(output, sobel_filter)
+        loss_pde0 = flux_diff_kdim(input, output, sobel_filter,reduction=True) \
+               + source_diff_kdim(output, sobel_filter,reduction=True)
         dr1dx, dr1dy = conv_gpinn(out1, sobel_filter)
         dr2dx, dr2dy = conv_gpinn(out2, sobel_filter)
         criterion = nn.MSELoss()
@@ -233,21 +215,21 @@ def loss_gpinn(input, output, sobel_filter,epoch):
 
         loss_pde = loss_pde0 + 0.05 * (dr1dx + dr1dy + dr2dx + dr2dy)
     else:
-        loss_pde = flux_diff(input, output, sobel_filter) \
-                   + source_diff(output, sobel_filter)
+        loss_pde = flux_diff_kdim(input, output, sobel_filter,reduction=True) \
+               + source_diff_kdim(output, sobel_filter,reduction=True)
     return loss_pde
 
 
-def loss_ohem(input, output, sobel_filter,epoch):
-    out1 = flux_diff_kdim(input, output, sobel_filter)
-    out2 = source_diff_kdim(output, sobel_filter)
-    if epoch >= 10:
-        loss_fun = P_OHEM(loss_fun=F.l1_loss)
-        loss1 = loss_fun(out1, out1 * 0)
-        loss2 = loss_fun(out2, out2 * 0)
-        loss_pde = loss1 + loss2
-    else:
-        loss_pde = flux_diff(input, output, sobel_filter) \
-                   + source_diff(output, sobel_filter)
-    return loss_pde
+# def loss_ohem(input, output, sobel_filter,epoch):
+#     out1 = flux_diff_kdim(input, output, sobel_filter,reduction=False)
+#     out2 = source_diff_kdim(output, sobel_filter,reduction=False)
+#     if epoch >= 10:
+#         loss_fun = P_OHEM(loss_fun=F.l1_loss)
+#         loss1 = loss_fun(out1, out1 * 0)
+#         loss2 = loss_fun(out2, out2 * 0)
+#         loss_pde = loss1 + loss2
+#     else:
+#         loss_pde = flux_diff_kdim(input, output, sobel_filter,reduction=True) \
+#                + source_diff_kdim(output, sobel_filter,reduction=True)
+#     return loss_pde
 
