@@ -16,8 +16,8 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 from foamFileOperation import readVectorFromFile,readScalarFromFile
 from torch.utils.data import Dataset
-device = torch.device(f"cuda:{1}" if torch.cuda.is_available() else "cpu")
-def convert_to_4D_tensor(data_list):
+
+def convert_to_4D_tensor(data_list,device):
     result_list = []
     for item in data_list:
         if len(item.shape) == 3:
@@ -30,7 +30,7 @@ def convert_to_4D_tensor(data_list):
 
 def data_from_OF(nx,ny,file_name):
     file_c=file_name+'/1/C'
-    file_f=file_name+'/1/F'
+    file_f=file_name+'/1/f'
     truth_all=readScalarFromFile(file_f)
     truth_xyz=readVectorFromFile(file_c)
     truth_xyz[:,2]=truth_all
@@ -39,7 +39,7 @@ def data_from_OF(nx,ny,file_name):
     o_truth=truth_xyz[:, 2].reshape(ny, nx,order='F')
     return o_x, o_y, o_truth
 
-def get_dataset():
+def get_dataset(device):
     h = 0.01
     OFBCCoord = Ofpp.parse_boundary_field('TemplateCase_4side/1/C')
     OFLOWC = OFBCCoord[b'low'][b'value']
@@ -78,7 +78,7 @@ def get_dataset():
     [dydeta, dydxi, dxdxi, dxdeta, Jinv] = \
         convert_to_4D_tensor([myMesh.dydeta_ho, myMesh.dydxi_ho,
                     myMesh.dxdxi_ho, myMesh.dxdeta_ho,
-                    myMesh.Jinv_ho])
+                    myMesh.Jinv_ho],device)
     return train_set,dydeta, dydxi, dxdxi, dxdeta, Jinv
 
 

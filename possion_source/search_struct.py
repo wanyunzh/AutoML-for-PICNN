@@ -250,16 +250,16 @@ if __name__ == "__main__":
 
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
     exp_config.max_trial_number = 70
-    exp_config.trial_gpu_number = 1
-    exp_config.training_service.use_active_gpu = True
-    exp.run(exp_config, 8061)
+    # exp_config.trial_gpu_number = 1
+    # exp_config.training_service.use_active_gpu = True
+    exp.run(exp_config, 8075)
     for model_dict in exp.export_top_models(top_k=5, formatter='dict'):
         print(model_dict)
     exported_arch_best = exp.export_top_models(top_k=1, formatter='dict')[0]
     import json
     from nni.retiarii import fixed_arch
-    json.dump(exported_arch_best, open('possion_model.json', 'w'))
-    with fixed_arch('possion_model.json'):
+    json.dump(exported_arch_best, open('possion_modelnew.json', 'w'))
+    with fixed_arch('possion_modelnew.json'):
         final_model = UNet(num_classes=1, in_channels=1)
         print('final model:', final_model)
 
