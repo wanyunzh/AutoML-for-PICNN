@@ -6,7 +6,17 @@ import torch.nn as nn
 import nni.retiarii.nn.pytorch as nn
 import nni.retiarii.strategy as strategy
 from nni.retiarii import model_wrapper
-torch.manual_seed(123)
+import numpy as np
+import random
+seed = 123
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+np.random.seed(seed)  # Numpy module.
+random.seed(seed)  # Python random module.
+torch.manual_seed(seed)
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
 
 class DepthwiseSeparableConv3(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -116,22 +126,22 @@ if __name__ == "__main__":
 
     evaluator = FunctionalEvaluator(traintest_hb)
 
-    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=200, trial_per_collect=1))
+    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=300, trial_per_collect=1))
 
     # exp = RetiariiExperiment(model_space, evaluator, [], strategy.TPEStrategy())
     exp_config = RetiariiExeConfig('local')
     exp_config.experiment_name = 'heat equation boundary'
 
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
-    exp_config.max_trial_number = 200
-    exp.run(exp_config, 8000)
+    exp_config.max_trial_number = 300
+    exp.run(exp_config, 8065)
     for model_dict in exp.export_top_models(top_k=5, formatter='dict'):
         print(model_dict)
     exported_arch_best = exp.export_top_models(top_k=1, formatter='dict')[0]
     import json
     from nni.retiarii import fixed_arch
-    json.dump(exported_arch_best, open('surrogate_model.json', 'w'))
-    with fixed_arch('surrogate_cnntrail.json'):
+    json.dump(exported_arch_best, open('HB_cnnnew.json', 'w'))
+    with fixed_arch('HB_cnnnew.json.json'):
         final_model = HBCNN_5(params1,In, Out)
         print('final model:', final_model)
 

@@ -24,7 +24,7 @@ class P_OHEM(torch.nn.Module):
         elif inputs.ndim == 3:
             min, max = min.reshape(diff.shape[0], 1, 1).expand(diff.shape), \
                        max.reshape(diff.shape[0], 1, 1).expand(diff.shape)
-        diff =1.0 * (diff - min) / (max - min)
+        diff =10.0 * (diff - min) / (max - min)
         continuity1=diff * (inputs - targets)
         criterion = nn.MSELoss()
         out=criterion(continuity1, continuity1 * 0)

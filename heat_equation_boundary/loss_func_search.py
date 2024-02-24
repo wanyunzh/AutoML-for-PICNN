@@ -6,7 +6,7 @@ import torch
 import nni.retiarii.nn.pytorch as nn
 from hb_oneshot import model5
 import random
-
+from loss_operation import *
 class HBCNN(nn.Module):
     def __init__(self, params, In, Out):
         super(HBCNN,self).__init__()
@@ -48,14 +48,22 @@ def convert_to_4D_tensor(data_list):
 if __name__ == "__main__":
     params = {
         'constraint': 2,
-        'loss function': 0,
+        'UNARY_OPS': 1,
+        'WEIGHT_INIT': 0,
+         'WEIGHT_OPS': 3,
+        'gradient':0,
         'kernel': 4,
     }
+
     import nni
     device = torch.device(f"cuda:{1}" if torch.cuda.is_available() else "cpu")
     optimized_params = nni.get_next_parameter()
     params.update(optimized_params)
     print(params)
+    # params['WEIGHT_OPS'] = 2
+    # params['UNARY_OPS'] = 0
+    # params['WEIGHT_INIT'] = 0
+    # params['gradient'] = 1
     seed = 123
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -101,13 +109,35 @@ if __name__ == "__main__":
                 output = output[:, 0, :, :].reshape(output.shape[0], 1,
                                                          output.shape[2],
                                                          output.shape[3])
+                if (epoch==0) and (iteration)==0:
+                    # if params['WEIGHT_INIT']=='one':
+                    #     init_weight=torch.ones_like(output)
+                    # else:
+                    #     init_weight = torch.zeros_like(output)
+                    # WEIGHT_OPS = {
+                    #     'normalize': P_OHEM(init_weight),
+                    #     'adaptive': Loss_Adaptive(init_weight) ,
+                    #     'max': Max(init_weight,epoch),
+                    #     'one': One(init_weight),
+                    # }
+                    if params['WEIGHT_INIT']==1:
+                        init_weight=torch.ones_like(output)
+                    else:
+                        init_weight = torch.zeros_like(output)
+                    WEIGHT_OPS = {
+                        0: P_OHEM(init_weight),
+                        1: Loss_Adaptive(init_weight) ,
+                        2: Max(init_weight,epoch),
+                        3: One(init_weight),
+                    }
+
                 output_temp = output.clone()
                 output_h = output_temp
                 loss_boundary=0
                 for j in range(batchSize):
                     bc1 = output_h[j, 0, :, -1:] - 0
                     bc2 = output_h[j, 0, :, 0:1] - Para[j, 0, 0, 0]
-                    loss_boundary = loss_boundary+1 * (bc1 ** 2).sum() + 1 * (bc2 ** 2).sum()
+                    loss_boundary = loss_boundary+1 * UNARY_OPS[params['UNARY_OPS']](bc1).sum() + 1 * UNARY_OPS[params['UNARY_OPS']](bc2).sum()
                 loss_boundary = loss_boundary / (2 *batchSize* bc1.shape[0])
 
                 for j in range(batchSize):
@@ -118,160 +148,38 @@ if __name__ == "__main__":
                         output_h[j, 0, -2:-1, 1:-1])
                     output_h[j, 0, :, -1:] = 0
                     output_h[j, 0, :, 0:1] = Para[j, 0, 0, 0]
-
-                if params['constraint'] == 0:
-                    kernel = params['kernel']
-                    diff_filter = Filter((output.shape[2], output_h.shape[3]),filter_size=kernel, device=device)
-                    if params['loss function'] == 0:
-                        continuity=pde_residue(output, diff_filter,dydeta, dydxi, dxdxi,dxdeta,Jinv)
-                        loss = criterion(continuity, continuity * 0)+loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 1:
-                        continuity = pde_residue(output, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss=(continuity**2).sum()
-                        if 200<epoch<1000 and epoch % 20 == 0:
-                            step += 1
-                            for j in range(batchSize):
-                                out = continuity[j, 0, :, :].reshape(continuity.shape[2], continuity.shape[3])
-                                index = torch.argmax(abs(out))
-                                max_res = out.max()
-                                id_list.append(index)
-                                for num, id in enumerate(id_list):
-                                    remain = (num) % batchSize
-                                    if remain == (batchSize * iteration + j) % batchSize:
-                                        add_res = out.view(-1)[id]
-                                        loss = loss + add_res ** 2
-                        # Code For RAR+residue
-                        loss_pde = loss / (
-                                    batchSize * step + batchSize * continuity.shape[2] * continuity.shape[
-                                3])
-                        loss = loss_pde + loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 2:
-                        continuity = pde_residue(output, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        drdx,drdy = pde_out(continuity, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss_g1 = criterion(drdx, drdx * 0)
-                        loss_g2 = criterion(drdy, drdy * 0)
-                        loss_res = criterion(continuity, continuity * 0)
-                        loss_all = loss_res + 0.001 * loss_g1 + 0.001 * loss_g2
-                        if epoch >= 200:
-                            loss = loss_all
-                        else:
-                            loss = loss_res
-                        loss = loss + loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 3:
-                        continuity = pde_residue(output, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        if epoch >= 200:
-                            loss_fun = P_OHEM(loss_fun=F.l1_loss)
-                            loss = loss_fun(continuity, continuity * 0)
-                        else:
-                            loss = criterion(continuity, continuity * 0)
-                        loss = loss + loss_boundary
-                        loss.backward()
-
-                # soft+hard constraint
-                if params['constraint'] == 1:
-                    kernel = params['kernel']
-                    diff_filter = Filter((output.shape[2], output_h.shape[3]), filter_size=kernel, device=device)
-                    if params['loss function'] == 0:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss = criterion(continuity, continuity * 0) + loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 1:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss=(continuity**2).sum()
-                        if 200<epoch<1000 and epoch % 20 == 0:
-                            step += 1
-                            for j in range(batchSize):
-                                out = continuity[j, 0, :, :].reshape(continuity.shape[2], continuity.shape[3])
-                                index = torch.argmax(abs(out))
-                                max_res = out.max()
-                                id_list.append(index)
-                                for num, id in enumerate(id_list):
-                                    remain = (num) % batchSize
-                                    if remain == (batchSize * iteration + j) % batchSize:
-                                        add_res = out.view(-1)[id]
-                                        loss = loss + add_res**2
-                        # Code For RAR+residue
-                        loss_pde = loss / (
-                                batchSize * step + batchSize * continuity.shape[2] * continuity.shape[
-                            3])
-                        loss = loss_pde + loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 2:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        drdx, drdy = pde_out(continuity, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss_g1 = criterion(drdx, drdx * 0)
-                        loss_g2 = criterion(drdy, drdy * 0)
-                        loss_res = criterion(continuity, continuity * 0)
-                        loss_all = loss_res + 0.001 * loss_g1 + 0.001 * loss_g2
-                        if epoch >= 200:
-                            loss = loss_all
-                        else:
-                            loss = loss_res
-                        loss = loss + loss_boundary
-                        loss.backward()
-                    if params['loss function'] == 3:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        if epoch >= 200:
-                            loss_fun = P_OHEM(loss_fun=F.l1_loss)
-                            loss = loss_fun(continuity, continuity * 0)
-                        else:
-                            loss = criterion(continuity, continuity * 0)
-                        loss = loss + loss_boundary
-                        loss.backward()
-                # hard constraint
+                kernel = params['kernel']
+                diff_filter = Filter((output_h.shape[2], output_h.shape[3]), filter_size=kernel, device=device)
                 if params['constraint'] == 2:
-                    kernel = params['kernel']
-                    diff_filter = Filter((output_h.shape[2], output_h.shape[3]), filter_size=kernel, device=device)
-                    if params['loss function'] == 0:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss = criterion(continuity, continuity * 0)
-                        loss.backward()
-                    if params['loss function'] == 1:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss=(continuity**2).sum()
-                        if 200<epoch<1000 and epoch % 20 == 0:
-                            step += 1
-                            for j in range(batchSize):
-                                out = continuity[j, 0, :, :].reshape(continuity.shape[2], continuity.shape[3])
-                                index = torch.argmax(abs(out))
-                                max_res = out.max()
-                                id_list.append(index)
-                                for num, id in enumerate(id_list):
-                                    remain = (num) % batchSize
-                                    if remain == (batchSize * iteration + j) % batchSize:
-                                        add_res = out.view(-1)[id]
-                                        loss = loss + add_res**2
-                        # Code For RAR+residue
-                        loss_pde = loss / (
-                                batchSize * step + batchSize * continuity.shape[2] * continuity.shape[
-                            3])
-                        loss = loss_pde
-                        loss.backward()
-                    if params['loss function'] == 2:
-                        continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        drdx, drdy = pde_out(continuity, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        loss_g1 = criterion(drdx, drdx * 0)
-                        loss_g2 = criterion(drdy, drdy * 0)
-                        loss_res = criterion(continuity, continuity * 0)
-                        loss_all = loss_res + 0.001 * loss_g1 + 0.001 * loss_g2
-                        if epoch >= 200:
-                            loss = loss_all
-                        else:
-                            loss = loss_res
-                        loss = loss
-                        loss.backward()
-                    if params['loss function'] == 3:
-                        continuity = pde_residue(output_h, filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
-                        if epoch >= 200:
-                            loss_fun = P_OHEM(loss_fun=F.l1_loss)
-                            loss = loss_fun(continuity, continuity * 0)
-                        else:
-                            loss = criterion(continuity, continuity * 0)
-                        loss = loss
-                        loss.backward()
+                    loss_boundary=0
+                if params['constraint'] == 0:
+                    continuity = pde_residue(output, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
+                else:
+                    continuity = pde_residue(output_h, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
+
+                difference = continuity - torch.zeros_like(continuity)
+
+
+                post_difference=UNARY_OPS[params['UNARY_OPS']](difference)
+                weight_search= WEIGHT_OPS[params['WEIGHT_OPS']](post_difference,epoch)
+                loss_search= torch.mean(torch.abs(post_difference * weight_search))
+                if params['gradient'] == 1:
+                    if epoch >= 500:
+                        drdx, drdy = pde_out(difference, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
+                        post_gradient1 = UNARY_OPS[params['UNARY_OPS']](drdx)
+                        post_gradient2 = UNARY_OPS[params['UNARY_OPS']](drdy)
+                        gradient_weight_search1 = WEIGHT_OPS[params['WEIGHT_OPS']](post_gradient1, epoch)
+                        gradient_weight_search2 = WEIGHT_OPS[params['WEIGHT_OPS']](post_gradient2, epoch)
+                        gradient_loss_search1 = torch.mean(torch.abs(post_gradient1 * gradient_weight_search1))
+                        gradient_loss_search2 = torch.mean(torch.abs(post_gradient2 * gradient_weight_search2))
+                    else:
+                        gradient_loss_search1 = 0
+                        gradient_loss_search2 = 0
+                else:
+                    gradient_loss_search1=0
+                    gradient_loss_search2=0
+                loss=loss_search+loss_boundary+0.005*(gradient_loss_search1 + gradient_loss_search2)
+                loss.backward()
 
                 optimizer.step()
                 loss_mass = loss
