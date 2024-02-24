@@ -13,7 +13,7 @@ sys.path.insert(0, '../source')
 from dataset import VaryGeoDataset, FixGeoDataset,VaryGeoDataset_PairedSolution
 from pyMesh import hcubeMesh, visualize2D, plotBC, plotMesh,setAxisLabel,\
                    np2cuda,to4DTensor
-from model import USCNN
+# from model import USCNN
 from readOF import convertOFMeshToImage,convertOFMeshToImage_StructuredMesh
 from evaluate_case3 import traintest_case3
 from UNet import UNet
@@ -33,7 +33,7 @@ import os
 import random
 print(torch.cuda.is_available())
 import torch
-from hb_oneshot import model5
+# from hb_oneshot import model5
 from loss_operation import *
 
 class DepthwiseSeparableConv3(nn.Module):
