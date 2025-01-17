@@ -390,11 +390,11 @@ if __name__ == "__main__":
             post_difference1 = UNARY_OPS[params['UNARY_OPS']](difference1)
             post_difference2 = UNARY_OPS[params['UNARY_OPS']](difference2)
             post_difference3 = UNARY_OPS[params['UNARY_OPS']](difference3)
-            weight_search1 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_difference1, epoch)
+            weight_search1 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_difference1, epoch,iteration)
             loss_search1 = torch.mean(torch.abs(post_difference1 * weight_search1))
-            weight_search2 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_difference2, epoch)
+            weight_search2 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_difference2, epoch,iteration)
             loss_search2 = torch.mean(torch.abs(post_difference2 * weight_search1))
-            weight_search3 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_difference3, epoch)
+            weight_search3 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_difference3, epoch,iteration)
             loss_search3 = torch.mean(torch.abs(post_difference3 * weight_search3))
             loss_search = loss_search1 + loss_search2 + loss_search3
 
@@ -411,12 +411,12 @@ if __name__ == "__main__":
                     post_gradient5 = UNARY_OPS[params['UNARY_OPS']](dr3dx)
                     post_gradient6 = UNARY_OPS[params['UNARY_OPS']](dr3dy)
 
-                    gradient_weight_search1 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_gradient1, epoch)
-                    gradient_weight_search2 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_gradient2, epoch)
-                    gradient_weight_search3 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_gradient3, epoch)
-                    gradient_weight_search4 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_gradient4, epoch)
-                    gradient_weight_search5 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_gradient5, epoch)
-                    gradient_weight_search6 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_gradient6, epoch)
+                    gradient_weight_search1 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_gradient1, epoch,iteration)
+                    gradient_weight_search2 = WEIGHT_OPS1[params['WEIGHT_OPS']](post_gradient2, epoch,iteration)
+                    gradient_weight_search3 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_gradient3, epoch,iteration)
+                    gradient_weight_search4 = WEIGHT_OPS2[params['WEIGHT_OPS']](post_gradient4, epoch,iteration)
+                    gradient_weight_search5 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_gradient5, epoch,iteration)
+                    gradient_weight_search6 = WEIGHT_OPS3[params['WEIGHT_OPS']](post_gradient6, epoch,iteration)
 
                     gradient_loss_search1 = torch.mean(torch.abs(post_gradient1 * gradient_weight_search1))
                     gradient_loss_search2 = torch.mean(torch.abs(post_gradient2 * gradient_weight_search2))
