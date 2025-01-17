@@ -85,7 +85,7 @@ def traintest_pos(model_cls):
                 WEIGHT_OPS = {
                     'normalize': P_OHEM(init_weight),
                     'adaptive': Loss_Adaptive(init_weight),
-                    'max': Max(init_weight, epoch),
+                    'max': Max(init_weight),
                     'one': One(init_weight),
                 }
             bc1 = output_h[:, 0, :, -1:] - 10

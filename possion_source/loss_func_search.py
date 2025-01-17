@@ -26,7 +26,7 @@ if __name__ == "__main__":
         'UNARY_OPS': 'square',
         'WEIGHT_INIT': 'zero',
         'WEIGHT_OPS': 'one',
-        'gradient': 1,
+        'gradient': 0,
         'kernel': 3,
     }
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 WEIGHT_OPS = {
                     'normalize': P_OHEM(init_weight),
                     # 'adaptive': Loss_Adaptive(init_weight),
-                    'max': Max(init_weight, epoch),
+                    'max': Max(init_weight),
                     'one': One(init_weight),
                 }
             bc1 = output_h[:, 0, :, -1:] - 10
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
             difference = continuity - torch.zeros_like(continuity)
             post_difference = UNARY_OPS[params['UNARY_OPS']](difference)
-            weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference, epoch)
+            weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference, epoch,iteration)
             loss_search = torch.mean(torch.abs(post_difference * weight_search))
             # if params['gradient'] == 1:
             #     if epoch >= 500:
