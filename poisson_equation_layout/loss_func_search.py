@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
             # difference = continuity - torch.zeros_like(continuity)
             post_difference = UNARY_OPS[params['UNARY_OPS']](difference)
-            weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference,epoch)
+            weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference,epoch,iteration)
             loss_search = torch.mean(torch.abs(post_difference * weight_search))
             # if params['gradient']==1:
             #     if epoch>=1:
