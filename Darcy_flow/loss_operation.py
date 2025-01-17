@@ -87,87 +87,103 @@ class One(torch.nn.Module):
 
 class Max1(torch.nn.Module):
     """
-    Max residue
+    Max residue with per-batch weight tracking
     """
-    def __init__(self,weight):
+    def __init__(self, weight):
         super(Max1, self).__init__()
-        # if epoch==0:
-        #     self.weight = weight
-        # else:
-        #     pass
-        self.weight=weight
-    def forward(self, difference,epoch=None):
-        result=torch.allclose(self.weight, torch.zeros_like(difference))
-        # if not result:
-        if (50<epoch<280) and (epoch % 10) == 0:
+        self.weight_dict = {}  # 使用字典存储每个 batch 的 weight
+        self.initial_weight = weight
+
+    def forward(self, difference, epoch, iteration,weight):
+        # 如果当前 batch 的 weight 尚未初始化，则初始化为初始 weight
+        if iteration not in self.weight_dict:
+            # self.weight_dict[iteration] = torch.zeros_like(difference)
+            self.weight_dict[iteration] = self.initial_weight
+
+        # 检查是否满足更新条件
+        if  (epoch % 1) == 0:
             batch_size = difference.size(0)
             add_weight = torch.zeros_like(difference)
-            top_n=3
+            top_n = 2000
+
             for i in range(batch_size):
-                # 对每个batch找到绝对值最大的前三个元素的位置
+                # 找到当前 batch 中绝对值最大的 top_n 个元素位置
                 _, top_idxs = torch.topk(torch.abs(difference[i]).view(-1), top_n)
                 # 在最大值位置将元素设置为 1
                 add_weight[i].view(-1)[top_idxs] = 1
-            self.weight= add_weight + self.weight
-            return self.weight
+
+            # 更新当前 batch 的 weight
+            self.weight_dict[iteration] += add_weight
+            return self.weight_dict[iteration]
         else:
-            return self.weight
+            return self.weight_dict[iteration]
 
 class Max2(torch.nn.Module):
     """
-    Max residue
+    Max residue with per-batch weight tracking
     """
-    def __init__(self,weight):
+    def __init__(self, weight):
         super(Max2, self).__init__()
-        # if epoch==0:
-        #     self.weight = weight
-        # else:
-        #     pass
-        self.weight=weight
-    def forward(self, difference,epoch=None):
-        result=torch.allclose(self.weight, torch.zeros_like(difference))
-        # if not result:
-        if (50<epoch<280) and (epoch % 10) == 0:
+        self.weight_dict = {}  # 使用字典存储每个 batch 的 weight
+        self.initial_weight = weight
+
+    def forward(self, difference, epoch, iteration,weight):
+        # 如果当前 batch 的 weight 尚未初始化，则初始化为初始 weight
+        if iteration not in self.weight_dict:
+            # self.weight_dict[iteration] = torch.zeros_like(difference)
+            self.weight_dict[iteration] = self.initial_weight
+
+        # 检查是否满足更新条件
+        if  (epoch % 1) == 0:
             batch_size = difference.size(0)
             add_weight = torch.zeros_like(difference)
-            top_n=3
+            top_n = 2000
+
             for i in range(batch_size):
-                # 对每个batch找到绝对值最大的前三个元素的位置
+                # 找到当前 batch 中绝对值最大的 top_n 个元素位置
                 _, top_idxs = torch.topk(torch.abs(difference[i]).view(-1), top_n)
                 # 在最大值位置将元素设置为 1
                 add_weight[i].view(-1)[top_idxs] = 1
-            self.weight= add_weight + self.weight
-            return self.weight
+
+            # 更新当前 batch 的 weight
+            self.weight_dict[iteration] += add_weight
+            return self.weight_dict[iteration]
         else:
-            return self.weight
+            return self.weight_dict[iteration]
+
 
 class Max3(torch.nn.Module):
     """
-    Max residue
+    Max residue with per-batch weight tracking
     """
-    def __init__(self,weight):
+    def __init__(self, weight):
         super(Max3, self).__init__()
-        # if epoch==0:
-        #     self.weight = weight
-        # else:
-        #     pass
-        self.weight=weight
-    def forward(self, difference,epoch=None):
-        result=torch.allclose(self.weight, torch.zeros_like(difference))
-        # if not result:
-        if (50<epoch<280) and (epoch % 10) == 0:
+        self.weight_dict = {}  # 使用字典存储每个 batch 的 weight
+        self.initial_weight = weight
+
+    def forward(self, difference, epoch, iteration,weight):
+        # 如果当前 batch 的 weight 尚未初始化，则初始化为初始 weight
+        if iteration not in self.weight_dict:
+            # self.weight_dict[iteration] = torch.zeros_like(difference)
+            self.weight_dict[iteration] = self.initial_weight
+
+        # 检查是否满足更新条件
+        if  (epoch % 1) == 0:
             batch_size = difference.size(0)
             add_weight = torch.zeros_like(difference)
-            top_n=3
+            top_n = 2000
+
             for i in range(batch_size):
-                # 对每个batch找到绝对值最大的前三个元素的位置
+                # 找到当前 batch 中绝对值最大的 top_n 个元素位置
                 _, top_idxs = torch.topk(torch.abs(difference[i]).view(-1), top_n)
                 # 在最大值位置将元素设置为 1
                 add_weight[i].view(-1)[top_idxs] = 1
-            self.weight= add_weight + self.weight
-            return self.weight
+
+            # 更新当前 batch 的 weight
+            self.weight_dict[iteration] += add_weight
+            return self.weight_dict[iteration]
         else:
-            return self.weight
+            return self.weight_dict[iteration]
 
 class Loss_Adaptive1(torch.nn.Module):
     """
@@ -179,7 +195,7 @@ class Loss_Adaptive1(torch.nn.Module):
 
     def forward(self, difference, epoch):
         # if (200 < epoch < 1500) and (epoch % 20) == 0:
-        if epoch>=50:
+        if epoch>=0:
             loss = torch.mean(self.res_w * torch.square(difference))
             grads_res = torch.autograd.grad(loss, self.res_w, create_graph=True)[0]
             self.res_w = self.res_w.clone() + 1e-4 * grads_res
