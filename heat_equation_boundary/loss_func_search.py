@@ -48,8 +48,8 @@ def convert_to_4D_tensor(data_list):
 if __name__ == "__main__":
     params = {
         'constraint': 2,
-        'UNARY_OPS': 1,
-        'WEIGHT_INIT': 0,
+        'UNARY_OPS': 'square',
+        'WEIGHT_INIT': 'zero',
          'WEIGHT_OPS': 3,
         'gradient':0,
         'kernel': 4,
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                         init_weight = torch.zeros_like(output)
                     WEIGHT_OPS = {
                         0: P_OHEM(init_weight),
-                        1: Loss_Adaptive(init_weight) ,
+                        1: Loss_Adaptive(init_weight),
                         2: Max(init_weight,epoch),
                         3: One(init_weight),
                     }

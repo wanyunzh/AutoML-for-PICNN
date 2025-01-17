@@ -126,22 +126,22 @@ if __name__ == "__main__":
 
     evaluator = FunctionalEvaluator(traintest_hb)
 
-    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=300, trial_per_collect=1))
+    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=500, trial_per_collect=1))
 
-    # exp = RetiariiExperiment(model_space, evaluator, [], strategy.TPEStrategy())
+    # exp = RetiariiExperiment(model_space, evaluator, [], strategy.GridSearch())
     exp_config = RetiariiExeConfig('local')
     exp_config.experiment_name = 'heat equation boundary'
 
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
-    exp_config.max_trial_number = 300
-    exp.run(exp_config, 8065)
+    exp_config.max_trial_number = 500
+    exp.run(exp_config, 8075)
     for model_dict in exp.export_top_models(top_k=5, formatter='dict'):
         print(model_dict)
     exported_arch_best = exp.export_top_models(top_k=1, formatter='dict')[0]
     import json
     from nni.retiarii import fixed_arch
-    json.dump(exported_arch_best, open('HB_cnnnew.json', 'w'))
-    with fixed_arch('HB_cnnnew.json.json'):
+    json.dump(exported_arch_best, open('HB_cnnnewtmp.json', 'w'))
+    with fixed_arch('HB_cnnnewtmp.json'):
         final_model = HBCNN_5(params1,In, Out)
         print('final model:', final_model)
 

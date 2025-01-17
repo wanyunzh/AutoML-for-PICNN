@@ -32,7 +32,7 @@ if __name__ == "__main__":
         'UNARY_OPS': 'identity',
         'WEIGHT_INIT': 'zero',
         'WEIGHT_OPS': 'adaptive',
-        'gradient': 1,
+        'gradient': 0,
         'kernel': 2,
     }
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             weight_search = WEIGHT_OPS[params['WEIGHT_OPS']](post_difference, epoch)
             loss_search = torch.mean(torch.abs(post_difference * weight_search))
             if params['gradient'] == 1:
-                if epoch >= 500: #原本是500
+                if epoch >= 10: #原本是500
                     drdx, drdy = pde_out(difference, diff_filter, dydeta, dydxi, dxdxi, dxdeta, Jinv)
                     post_gradient1 = UNARY_OPS[params['UNARY_OPS']](drdx)
                     post_gradient2 = UNARY_OPS[params['UNARY_OPS']](drdy)
@@ -154,7 +154,8 @@ if __name__ == "__main__":
             else:
                 gradient_loss_search1 = 0
                 gradient_loss_search2 = 0
-            loss = loss_search + loss_boundary + 0.005 * (gradient_loss_search1 + gradient_loss_search2)
+            loss = loss_search + loss_boundary + 0.0005 * (gradient_loss_search1 + gradient_loss_search2)
+            # loss = loss_search + loss_boundary + 0.005 * (gradient_loss_search1 + gradient_loss_search2)
             loss.backward()
 
             optimizer.step()
@@ -180,10 +181,13 @@ if __name__ == "__main__":
     print('train error', error_final)
     print('numepoch:', numepoch)
 
+    truthall = []
+    picnnall = []
     test_set = get_dataset(mode='test')
     Error_test = []
     model.load_state_dict(torch.load('hb_search_struct.pth', map_location=torch.device('cpu')))
     for i in range(len(test_set)):
+
         [Para, coord, xi, eta, J, Jinv, dxdxi, dydxi, dxdeta, dydeta, truth] = convert_to_4D_tensor(test_set[i])
         Para = Para.reshape(1, 1, Para.shape[0], Para.shape[1])
         truth = truth.reshape(1, 1, truth.shape[0], truth.shape[1])
@@ -204,35 +208,65 @@ if __name__ == "__main__":
         output_h[0, 0, :, -1:] = 0  # right wall bc
         output_h[0, 0, :, 0:1] = Para[0, 0, 0, 0]  # left  wall bc
 
+        truthall.append(truth[0,0,:,:].cpu().detach().numpy())
+        picnnall.append(output_h[0,0,:,:].cpu().detach().numpy())
+
         Error_test.append(torch.sqrt(criterion(truth, output_h) / criterion(truth, truth * 0)))
+
+    truthall = np.array(truthall)
+    picnnall = np.array(picnnall)
+    np.save('truthall.npy', truthall)
+    np.save('picnnall.npy', picnnall)
+    coord_x = coord[0, 0, :, :].cpu().detach().numpy()
+    coord_y = coord[0, 1, :, :].cpu().detach().numpy()
+    np.save('coord_x.npy', coord_x)
+    np.save('coord_y.npy', coord_y)
+
     Error_test = np.asarray([i.cpu().detach().numpy() for i in Error_test])
     print(Error_test)
     mean_error = float(np.mean(Error_test))
     print('test error:', mean_error)
 
-    import matplotlib.pyplot as plt
-    fig1 = plt.figure(1)
-    plt.plot(Res_list, label='Training Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training Loss')
-    plt.legend()
-    plt.yscale('log')
 
-    # 保存训练损失曲线图
-    fig1.savefig('retrain_loss_curve2.jpg', dpi=500)
-    fig2 = plt.figure(2)
 
-    # 绘制预测误差曲线
-    plt.plot(Error, label='Prediction Error')
-    plt.xlabel('Epoch')
-    plt.ylabel('Error')
-    plt.title('Prediction Error of Validation set')
-    plt.legend()
-    plt.yscale('log')
-    # 保存预测误差曲线图
-    fig2.savefig('retrain_error_curve2.jpg', dpi=500)
-    print('drawing done')
+
+
+
+    Error = np.asarray(Error)
+    Res_list = np.asarray(Res_list)
+    np.savetxt('Error_final.txt', Error)
+    np.savetxt('Res_list_final.txt', Res_list)
+
+
+
+
+    # import matplotlib.pyplot as plt
+    # fig1 = plt.figure(1)
+    # plt.plot(Res_list, label='Training Loss')
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Loss')
+    # plt.title('Training Loss')
+    # plt.legend()
+    # plt.yscale('log')
+    #
+    # # 保存训练损失曲线图
+    # fig1.savefig('retrain_loss_tmp.jpg', dpi=500)
+    # fig2 = plt.figure(2)
+    #
+    # # 绘制预测误差曲线
+    # plt.plot(Error, label='Prediction Error')
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Error')
+    # plt.title('Prediction Error of Validation set')
+    # plt.legend()
+    # plt.yscale('log')
+    # # 保存预测误差曲线图
+    # fig2.savefig('retrain_error_tmp.jpg', dpi=500)
+    # print('drawing done')
+
+
+
+
     # nni.report_intermediate_result(1 / mean_error)
     # nni.report_final_result(1 / float(error_final))
 

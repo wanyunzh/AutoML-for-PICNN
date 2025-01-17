@@ -14,11 +14,15 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
 UNARY_OPS = {
-    0: lambda x: torch.abs(x),
-    1: lambda x: torch.pow(x, 2),
-    2: lambda x: x,
+    'absolute': lambda x: torch.abs(x),
+    'square': lambda x: torch.pow(x, 2),
+    'identity': lambda x: x,
 }
-
+# UNARY_OPS = {
+#     0: lambda x: torch.abs(x),
+#     1: lambda x: torch.pow(x, 2),
+#     2: lambda x: x,
+# }
 
 class P_OHEM(torch.nn.Module):
     """
@@ -117,3 +121,7 @@ WEIGHT_INIT={
     'one': lambda x: torch.ones_like(x),
     'zero': lambda x: torch.zeros_like(x),
 }
+# WEIGHT_INIT={
+#     0: lambda x: torch.ones_like(x),
+#     1: lambda x: torch.zeros_like(x),
+# }
