@@ -1,5 +1,4 @@
-# Python function to manipulate OpenFOAM files
-# Developer: Jian-Xun Wang (jwang33@nd.edu)
+# Reference: https://github.com/Jianxun-Wang/phygeonet/tree/master from Developer: Jian-Xun Wang (jwang33@nd.edu)
 ###############################################################################
 # system import
 import numpy as np
