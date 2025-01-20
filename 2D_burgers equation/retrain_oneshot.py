@@ -14,6 +14,7 @@ import os
 from torch.nn.utils import weight_norm
 import random
 from hpo_utils import *
+from burges_oneshot import search
 # os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 seed=66
 random.seed(seed)
@@ -25,8 +26,7 @@ torch.manual_seed(seed)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 torch.set_default_dtype(torch.float32)
-device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
-from search_struct import UNet_burgers
+device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
 # define the high-order finite difference kernels
 dxdy_laplace = [[[[    0,   0, -1/12,   0,     0],
              [    0,   0,   4/3,   0,     0],
@@ -433,15 +433,13 @@ def relative_l2_norm(ten_pred, ten_true):
     return relative_l2
 
 
-if __name__ == '__main__':
+def traintest_burgers(model_cls):
     params = {
         'UNARY_OPS': 'square',
         'WEIGHT_INIT': 'one',
         'WEIGHT_OPS': 'max',
     }
-    Res_list = []
-    Error = []
-    device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
     print(device)
     ######### download the ground truth data ############
     data_dir = '../data/2dBurgers/burgers_1501x2x128x128.mat'    
@@ -471,20 +469,11 @@ if __name__ == '__main__':
     num_time_batch = int(time_steps / time_batch_size)
     n_iters_adam = 5000
     lr_adam = 1e-3 #1e-3 
-    model_save_path = '../model/retrain_struct_search.pt'
+    model_save_path = '../model/loss_darts.pt'
     fig_save_path = '../figures/'  
+
+    model = search().to(device)
     from nni.retiarii import fixed_arch
-    with fixed_arch('burgers.json'):
-        model =  UNet_burgers(
-        input_channels = 2, 
-        hidden_channels = [32, 64, 128, 256], 
-        input_kernel_size = [4, 4, 4, 3], 
-        input_stride = [2, 2, 2, 1], 
-        input_padding = [1, 1, 1, 1],  
-        dt = dt,
-        num_layers = [3, 1],
-        upscale_factor = 8)
-    model = model.to(device)
 
     start = time.time()
     train_loss_list = []
@@ -550,7 +539,6 @@ if __name__ == '__main__':
 
             error = relative_l2_norm(ten_pred, ten_true)
             print('The predicted L2 error is: ', error)
-            Error.append(float(error))
             
             # get loss
             # Padding x axis due to periodic boundary condition
@@ -588,7 +576,6 @@ if __name__ == '__main__':
             loss_search1 = torch.mean(torch.abs(post_difference1 * weight_search1))
             loss_search2 = torch.mean(torch.abs(post_difference2 * weight_search2))
             loss = loss_search1 + loss_search2
-            Res_list.append(float(loss))
             # mse_loss = nn.MSELoss()
             # loss =  mse_loss(f_u, torch.zeros_like(f_u).cuda()) + mse_loss(f_v, torch.zeros_like(f_v).cuda())
             loss.backward(retain_graph=True)
@@ -624,8 +611,23 @@ if __name__ == '__main__':
     effective_step = list(range(0, steps_load))  
     # print('Model is:')
     # print(model)
+    
+    # with fixed_arch('burgers_enas_5000.json'):
+    #     model = PhyCRNet(
+    #     input_channels = 2, 
+    #     hidden_channels = [32, 64, 128, 256], 
+    #     input_kernel_size = [4, 4, 4, 3], 
+    #     input_stride = [2, 2, 2, 1], 
+    #     input_padding = [1, 1, 1, 1],  
+    #     dt = dt,
+    #     num_layers = [3, 1],
+    #     upscale_factor = 8)
+    
 
     # 设置模型的 step 和 effective_step 属性
+    # model.step = steps_load
+    # model.effective_step = effective_step
+
     model, _, _ = load_checkpoint(model, optimizer=None, scheduler=None, save_dir=model_save_path) 
     model.step = steps_load
     model.effective_step = effective_step
@@ -660,23 +662,12 @@ if __name__ == '__main__':
     error_f = frobenius_norm(np.array(ten_pred)-np.array(ten_true)) / frobenius_norm(
         np.array(ten_true))
     print('The predicted errorf is: ', error_f)
-    truthall = np.array(ten_true)
-    picnnall = np.array(ten_pred)
-    np.save('truthall.npy',truthall)
-    np.save('picnnall.npy',picnnall)
     # compute the L2 error
     error = relative_l2_norm(ten_pred, ten_true)
     print('The predicted error is: ', error)
     nni.report_final_result(1 / float(error))
-    
-    Error = np.asarray(Error)
-    Res_list = np.asarray(Res_list)
-    np.savetxt('EV.txt', Error)
-    np.savetxt('Res_list.txt', Res_list)
 
-
-
-
+traintest_burgers(5)
 
 
     # u_pred = output[:-1, 0, :, :].detach().cpu().numpy()

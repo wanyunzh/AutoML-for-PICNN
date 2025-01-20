@@ -28,19 +28,19 @@ torch.backends.cudnn.deterministic = True
 torch.set_default_dtype(torch.float32)
 device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
 # define the high-order finite difference kernels
-lapl_op = [[[[    0,   0, -1/12,   0,     0],
+dxdy_laplace = [[[[    0,   0, -1/12,   0,     0],
              [    0,   0,   4/3,   0,     0],
              [-1/12, 4/3,    -5, 4/3, -1/12],
              [    0,   0,   4/3,   0,     0],
              [    0,   0, -1/12,   0,     0]]]]
 
-partial_y = [[[[0, 0, 0, 0, 0],
+grad_y = [[[[0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0],
                [1/12, -8/12, 0, 8/12, -1/12],
                [0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0]]]]
 
-partial_x = [[[[0, 0, 1/12, 0, 0],
+grad_x = [[[[0, 0, 1/12, 0, 0],
                [0, 0, -8/12, 0, 0],
                [0, 0, 0, 0, 0],
                [0, 0, 8/12, 0, 0],
@@ -284,19 +284,19 @@ class loss_generator(nn.Module):
 
         # spatial derivative operator
         self.laplace = Conv2dDerivative(
-            DerFilter = lapl_op,
+            DerFilter = dxdy_laplace,
             resol = (dx**2),
             kernel_size = 5,
             name = 'laplace_operator').to(device)
 
         self.dx = Conv2dDerivative(
-            DerFilter = partial_x,
+            DerFilter = grad_x,
             resol = (dx*1),
             kernel_size = 5,
             name = 'dx_operator').to(device)
 
         self.dy = Conv2dDerivative(
-            DerFilter = partial_y,
+            DerFilter = grad_y,
             resol = (dx*1),
             kernel_size = 5,
             name = 'dy_operator').to(device)
