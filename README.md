@@ -5,7 +5,7 @@ The datasets for the Darcy flow and Poisson equations with different layouts can
 
 The datasets for the Navier-Stokes equations can be downloaded in https://github.com/Jianxun-Wang/phygeonet.<br /> (case3)
 
-The datasets for the 2D burgers equation can be downloaded in https://github.com/isds-neu/PhyCRNet.<br />.
+The datasets for the 2D burgers equation can be downloaded use the code in https://github.com/isds-neu/PhyCRNet.<br />.
 
 
 ## 2. Searching for loss functions
