@@ -14,7 +14,7 @@ sys.path.insert(0, '../source')
 from dataset import VaryGeoDataset,FixGeoDataset,VaryGeoDataset_PairedSolution
 from pyMesh import hcubeMesh, visualize2D, plotBC, plotMesh,setAxisLabel,\
                    np2cuda,to4DTensor
-# from modelself import USCNN, USCNNSep
+from search_struct import HBCNN_5
 from readOF import convertOFMeshToImage,convertOFMeshToImage_StructuredMesh
 import nni.retiarii.nn.pytorch as nn
 from hpo_utils import *
@@ -144,7 +144,10 @@ def traintest_case3():
         h = 0.01
         NvarInput = 2
         NvarOutput = 3
-        model = USCNNSep(params1, NvarInput, NvarOutput).to(device)
+        with fixed_arch('NS_cnn.json'):
+            model = HBCNN_5(params1, h, nx, ny, NvarInput, NvarOutput, 'kaiming')
+        model = model.to(device)
+        print('final model:', model)
         scalarList = [-0.1, 0.0, 0.1]
         SolutionList = []
         MeshList = []

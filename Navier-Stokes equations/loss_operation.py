@@ -300,6 +300,6 @@ class Loss_Adaptive3(torch.nn.Module):
 
 
 WEIGHT_INIT={
-    'one': lambda x: torch.ones_like(x),
-    'zero': lambda x: torch.zeros_like(x),
+    1: lambda x: torch.ones_like(x),
+    0: lambda x: torch.zeros_like(x),
 }

@@ -4,8 +4,7 @@ search_space={
   "UNARY_OPS": {"_type": "choice", "_value": [0,1,2]},
   "WEIGHT_INIT": {"_type": "choice", "_value": [0,1]},
   "WEIGHT_OPS": {"_type": "choice", "_value": [0,1,2]},
-   # "normalize_coef": {"_type": "choice", "_value": [1,5,10]},
-   # "gradient": {"_type": "choice", "_value": [0]},
+   # "gradient": {"_type": "choice", "_value": [0,1]},
   "kernel": {"_type": "choice", "_value": [2,3,4,5]}
 }
 from nni.experiment import Experiment
@@ -35,7 +34,7 @@ experiment.config.tuner.class_args = {
     'selection_num_starting_points': 250
 }
 
-experiment.config.max_trial_number = 200
+experiment.config.max_trial_number = 50
 experiment.config.trial_concurrency = 1
 experiment.run(8065)
 

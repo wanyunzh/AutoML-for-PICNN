@@ -118,19 +118,6 @@ class _DecoderBlock(nn.Module):
         x = self.out(x)
         return x
 
-
-# def initialize_weights(*models):
-#     for model in models:
-#         for module in model.modules():
-#             if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
-#                 nn.init.kaiming_normal_(module.weight)
-#                 if module.bias is not None:
-#                     module.bias.data.zero_()
-#             elif isinstance(module, nn.BatchNorm2d):
-#                 module.weight.data.fill_(1)
-#                 module.bias.data.zero_()
-
-
 class UpsamplingNearest2d(nn.Module):
     def __init__(self, scale_factor=2.):
         super().__init__()
@@ -250,7 +237,6 @@ if __name__ == "__main__":
 
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
     exp_config.max_trial_number = 70
-    # exp_config.trial_gpu_number = 1
     # exp_config.training_service.use_active_gpu = True
     exp.run(exp_config, 8075)
     for model_dict in exp.export_top_models(top_k=5, formatter='dict'):
@@ -264,14 +250,6 @@ if __name__ == "__main__":
         print('final model:', final_model)
 
 
-
-# if __name__ == '__main__':
-#     model = UNet(in_channels=1, num_classes=1)
-#     print(model)
-#     x = torch.randn(32, 1, 29, 29)
-#     with torch.no_grad():
-#         final = model(x)
-#         print(final.shape)
 
 
 

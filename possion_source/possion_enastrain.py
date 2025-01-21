@@ -168,7 +168,6 @@ class My_EnasTrainer(EnasTrainer):
 
 class My_DartsTrainer(DartsTrainer):
 
-
     def __init__(self, model, num_epochs, optimizer=None, loss=None, metrics=None,
                  dataset=None,grad_clip=5.,
                  learning_rate=2.5E-3, batch_size=32, workers=4,

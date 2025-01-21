@@ -19,14 +19,6 @@ def convert_to_4D_tensor(data_list):
             result_list.append(item.float().to(device))
     return result_list
 if __name__ == "__main__":
-    # params = {
-    #     'constraint': 2,
-    #     'UNARY_OPS': 'square',
-    #     'WEIGHT_INIT': 'zero',
-    #     'WEIGHT_OPS': 'one',
-    #     'gradient': 0,
-    #     'kernel': 3,
-    # }
     params = {
         'constraint': 2,
         'UNARY_OPS': 'square',

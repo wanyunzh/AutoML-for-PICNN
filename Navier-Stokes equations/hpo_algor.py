@@ -4,7 +4,7 @@ search_space={
   "UNARY_OPS": {"_type": "choice", "_value": [0,1,2]},
   "WEIGHT_INIT": {"_type": "choice", "_value": [0,1]},
   "WEIGHT_OPS": {"_type": "choice", "_value": [0,1,2,3]},
-   # "normalize_coef": {"_type": "choice", "_value": [1,5,10]},
+  
    "gradient": {"_type": "choice", "_value": [0,1]},
   "kernel": {"_type": "choice", "_value": [2,3,4,5]}
 }

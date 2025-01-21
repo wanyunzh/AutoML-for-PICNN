@@ -18,14 +18,6 @@ def convert_to_4D_tensor(data_list):
     return result_list
 
 def traintest_pos(model_cls):
-    # params = {
-    #     'constraint': 0,
-    #     'UNARY_OPS': 'absolute',
-    #     'WEIGHT_INIT': 'zero',
-    #     'WEIGHT_OPS': 'one',
-    #     'gradient': 0,
-    #     'kernel': 3,
-    # }
 
     params = {
         'constraint': 2,

@@ -74,9 +74,6 @@ if __name__ == '__main__':
                 }
             output_tmp = output.cpu().detach().numpy()
             input = input * args.input_std + args.input_mean
-            # with torch.no_grad():
-            #     continuity, loss_b = filter(input, output)
-
             if params['kernel'] == 2 or params['kernel'] == 4:
                 with torch.no_grad():
                     continuity, loss_b = filter(input, output)

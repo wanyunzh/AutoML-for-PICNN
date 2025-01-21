@@ -276,12 +276,3 @@ if __name__ == "__main__":
     with fixed_arch('layout_struct.json'):
         final_model = UNet(in_channels=1, num_classes=1)
         print('final model:', final_model)
-
-#
-# if __name__ == '__main__':
-#     model = CNN(n_layers=4)
-#     # print(model)
-#     x = torch.randn(32, 1, 200, 200)
-#     with torch.no_grad():
-#         final = model(x)
-#         print(final.shape)

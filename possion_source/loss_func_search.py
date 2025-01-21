@@ -40,7 +40,7 @@ if __name__ == "__main__":
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
-    np.random.seed(seed)  # Numpy module.
+    np.random.seed(seed)  
     random.seed(seed)  # Python random module.
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
@@ -51,9 +51,7 @@ if __name__ == "__main__":
     train_size = 256
     all_set,dydeta, dydxi, dxdxi, dxdeta, Jinv = get_dataset(device)
     train_set=all_set[:train_size]
-
     training_data_loader=DataLoader(train_set,batch_size=batchSize)
-
     with fixed_arch('possion_ori.json'):
         model = UNet(num_classes=1, in_channels=1)
         print('model is:', model)

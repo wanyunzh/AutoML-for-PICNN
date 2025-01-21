@@ -235,9 +235,9 @@ if __name__ == "__main__":
     model_space=HBCNN_5(params1,h,nx, ny, NvarInput, NvarOutput,'kaiming')
     evaluator = FunctionalEvaluator(traintest_NS)
 
-    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=400,trial_per_collect=3))
+    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=200,trial_per_collect=3))
     exp_config = RetiariiExeConfig('local')
-    exp_config.experiment_name = 'case_3'
+    exp_config.experiment_name = 'NS'
 
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
     # exp_config.max_trial_number = 200

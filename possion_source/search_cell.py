@@ -13,7 +13,6 @@ from evaluate_main import traintest_pos
 import random
 
 class EncoderBlock(nn.Module):
-
     def __init__(self, in_channels, out_channels, dropout=False,bn=False):
         super(EncoderBlock, self).__init__()
         layers = [

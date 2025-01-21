@@ -11,8 +11,6 @@ import random
 from trainer_enas import My_EnasTrainer,My_DartsTrainer
 
 
-
-
 class _EncoderBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, dropout=False, polling=True, bn=False):
