@@ -121,9 +121,7 @@ if __name__ == "__main__":
 
     In = 1
     Out = 1
-
     model_space = HBCNN_5(params1,In, Out)
-
     evaluator = FunctionalEvaluator(traintest_hb)
 
     exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=500, trial_per_collect=1))
@@ -131,7 +129,6 @@ if __name__ == "__main__":
     # exp = RetiariiExperiment(model_space, evaluator, [], strategy.GridSearch())
     exp_config = RetiariiExeConfig('local')
     exp_config.experiment_name = 'heat equation boundary'
-
     exp_config.trial_concurrency = 1  # 最多同时运行 2 个试验
     exp_config.max_trial_number = 500
     exp.run(exp_config, 8075)

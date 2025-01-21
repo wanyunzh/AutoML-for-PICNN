@@ -54,7 +54,6 @@ def traintest_hb(model_cls):
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(training_data_loader),
                                                     epochs=Epochs, div_factor=2,
                                                     pct_start=0.5)
-
     for epoch in range(0, Epochs):
         Res = 0
         error = 0

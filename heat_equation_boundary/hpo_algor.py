@@ -15,6 +15,7 @@ experiment.config.trial_command = 'python loss_func_search.py'
 experiment.config.trial_code_directory = '.'
 experiment.config.search_space = search_space
 
+# Try hpo_gp.py or use this one for BO
 # experiment.config.tuner.name = 'GP'
 # experiment.config.tuner.class_args = {
 #     'optimize_mode': 'minimize',

@@ -65,7 +65,6 @@ if __name__ == "__main__":
         'channel3': 16
     }
 
-    # model = model_cls().to(device)
     with fixed_arch('HB_cnnnew.json'):
         model = HBCNN_5(params1,In, Out)
         print('final model:', model)
