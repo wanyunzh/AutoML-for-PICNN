@@ -18,7 +18,7 @@ experiment.config.tuner.name = 'TPE'
 experiment.config.tuner.class_args = {
     'optimize_mode': 'minimize'
 }
-
+#option: BO or TPE
 # experiment.config.tuner.name = 'GPTuner'
 # experiment.config.tuner.class_args = {
 #     'optimize_mode': 'minimize',

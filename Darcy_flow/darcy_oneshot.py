@@ -205,14 +205,11 @@ class UNet(nn.Module):
         # if mid4.size() != enc4.size():
         #     _, _, height1, width1 = enc4.size()
         #     mid4 = F.interpolate(mid4, (height1, width1), mode='bilinear')
-
         dec4 = self.dec4(torch.cat([mid4, enc4], 1))
-
         mid3 = self.up2(dec4)
         # if mid3.size() != enc3.size():
         #     _, _, height1, width1 = enc3.size()
         #     mid3 = F.interpolate(mid3, (height1, width1), mode='bilinear')
-
         dec3 = self.dec3(torch.cat([mid3, enc3], 1))
 
         mid2 = self.up3(dec3)
@@ -236,16 +233,12 @@ def search():
     torch.manual_seed(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-
     model = UNet(in_channels=1, num_classes=3)
 
     trainer = My_DartsTrainer(model,
                              num_epochs=300
                             )
-
     # trainer=My_EnasTrainer(model,num_epochs=600)
-
-
     trainer.fit()
 
     exported_arch = trainer.export()
