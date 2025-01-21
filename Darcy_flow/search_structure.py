@@ -234,11 +234,11 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     model_space = UNet(in_channels=1, num_classes=3)
     evaluator = FunctionalEvaluator(unet_struct)
-    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=80,trial_per_collect =1))
+    exp = RetiariiExperiment(model_space, evaluator, [], strategy.PolicyBasedRL(max_collect=100,trial_per_collect =1))
     exp_config = RetiariiExeConfig('local')
     exp_config.experiment_name = 'darcy_flow'
     exp_config.trial_concurrency = 1 # 最多同时运行 2 个试验
-    exp_config.max_trial_number = 80
+    exp_config.max_trial_number = 100
     # exp_config.trial_gpu_number = 1
     # exp_config.training_service.use_active_gpu = False
     exp.run(exp_config, 8065)
