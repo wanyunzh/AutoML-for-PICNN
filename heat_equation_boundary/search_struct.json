@@ -1,0 +1,7 @@
+{
+    "model_1": "conv7x7",
+    "model_2": "conv5x5",
+    "model_3": "maxpool",
+    "model_4": "sepconv7x7",
+    "model_5": "sepconv7x7"
+}
